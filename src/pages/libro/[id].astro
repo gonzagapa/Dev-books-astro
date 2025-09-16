@@ -1,0 +1,57 @@
+---
+import type { GetStaticPaths } from "astro";
+import { getCollection, render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import { SHOW_BUY_BUTTON } from "astro:env/server";
+import AmazonLogo from "../../components/AmazonLogo.astro";
+import BookStore from "../../components/BookStore.astro";
+import BuyButton from "../../components/BuyButton.astro";
+
+export const getStaticPaths = (async () => {
+  const books = await getCollection("books");
+
+  return books.map((book) => ({
+    params: { id: book.slug },
+    props: { book },
+  }));
+}) satisfies GetStaticPaths;
+
+const { book } = Astro.props;
+const { data, slug } = book;
+const { author, buy, description, readtime, img, title } = data;
+
+const { Content } = await render(book);
+
+export const prerender = true;
+---
+
+<Layout title={`${title} - Dev Books`}>
+  <div class="flex gap-12 mt-10">
+    <aside>
+      <a
+        href="/"
+        rel="noopener noreferrer"
+        class="hover:underline opacity-80 mb-5 inline-block">⬅️ Volver atras</a
+      >
+      <img
+        transition:name={`img-${slug}`}
+        src={`/${img}`}
+        alt={title}
+        class="rounded-lg w-72 h-auto"
+      />
+      <BookStore server:defer>
+        <span slot="fallback" class="block text-sm opacity-85 mt-5"
+          >Cargando...</span
+        >
+      </BookStore>
+      {SHOW_BUY_BUTTON && <BuyButton buy={buy} server:defer />}
+    </aside>
+
+    <main class="max-w-3xl">
+      <h1 class="text-4xl font-bold mb-4">{title}</h1>
+      <div class="prose prose-invert">
+        <Content />
+      </div>
+    </main>
+  </div>
+</Layout>
